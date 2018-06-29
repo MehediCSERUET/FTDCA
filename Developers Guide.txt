@@ -1,0 +1,158 @@
+### Facebook Twitter Data Collector and Analyzer Software ###
+This software lets the user fetch data from Facebook and twitter and lets the user pre-process the data and apply some queries on the data.
+From Facebook, the data can be downloaded from any public page or group. From twitter, the data is fetched based on hashtag.
+
+### Features
+This software can
+	1. Fetch public data from Facebook based on Group/page id.
+	2. Fetch tweet from twitter based on Hashtag.
+	3. Pre-process the data which includes creating new row, editing existing row, deleting row, merge two or more json file produced by FTDCA etc.
+	4. The fetched data can be saved as json format for convenience and later load into the software.
+	5. The json file can be load into MySQL and some queries can be executed on the data. Results can be also saved as json file.
+
+
+
+### Prerequisites
+1. Java Development Kit(JDK) version 1.8
+2. Facebook App id and App secret, user Accesstoken
+3. Twitter accesstoken, accesstokenSecret, consumerKey, ConsumerKeySecret
+4. You need a local server with 3306 port for MySQL and ‘ftdca’ must be created in the database upfront without the quotes. 
+   For this, xampp is easier to use.
+
+### Environment Setup
+1. Make sure you have JDK 1.8 installed on your machine. If not, go to https://www.oracle.com/technetwork/java/javase/downloads/index.html and download and install.
+2. Install Netbeans IDE from https://www.netbeans.org/downloads/
+3. Download and install Xampp if you do not have this from https://www.apachefriends.org/download.html
+4. To get Twitter credentials, follow this official guide https://developer.twitter.com/en/docs/basics/authentication/guides/access-tokens.html
+5. For facebook credentials, follow this official guide https://developers.facebook.com/docs/apps/register/
+6. To get user access token, go to https://developers.facebook.com/tools/explorer/    (This token is valid for 2 hours only, so you need to update it every 2 hours)
+7. Start Apache and Mysql services from Xampp
+8. Go to https://localhost/phpmyadmin and create a database named 'ftdca' without the quotes, under the user `root` having no password set.
+9. Import project into Netbeans using File->Import Project->From ZIP.. and specify the zip file.
+10. Run the project.
+11. Register your account with valid credentials
+
+### How to use the software
+1. To collect facebook data
+	Start Apache and Mysql from xampp
+      	Login into your account
+	Click Facebook Button from Menu
+	Enter your Acccesstoken
+	Enter group/page id and click Search button
+	Then click "Save" button after the data has been fetched.
+
+2. To collect data from Twitter
+	Start Apache and mysql from xampp
+	Login into your account
+	Click Twitter button from menu
+	Enter the hashtag you want to search with # infront of the tag. Ex: #WorldCup
+	Enter the number of tweet
+	Click Search button
+	Save after the data has been fetched.
+
+3. To preprocess the data
+	Load the json file you saved earlier
+	To Create a new row, Enter the data in the textfield named "Add New Row" and click "Add"
+	To delete a row, Enter the "Id" of the row which is the 1st column.
+	To update a row, simply click on that row and edit.
+	To CLear the table, click "Clear Table" button.
+	To go back to menu, click "Menu" button.
+	TO merge more than one json files, just load them one after another.
+4. To Load data into mysql
+	Load the desired json file using "Choose" Button
+	"Clear" button will clear the table from the software as well as from the mysql.
+	"Menu" button will return you to menu page.
+	If you want to execute any query on the data, write the query and click "Execute" button. The tablename will be the same as the name of the json file except the file extension.
+	Clicking the save button will save the data that are available on the table of the software.
+
+### Designing of the User Interface
+* The design of the user interface was done by Drag and Drop feature of Netbeans. To create a new Page follow these steps:
+	FTDCA->source packages->ftdca->Right Mouse click->New->JFrame Form
+  N:B: Project must be imported upfront.
+* From Palette, only Text Field, Label, Table and Button was used in all the pages when necessary. 
+* File Chooser was coded directly which is used in Preprocess and JSON2Mysql page
+* Only Labels are not given any variable name. All the other components were given variable names. To name a component, right click the mouse while the pointer is on the
+  component. Find "Change Varibale Name.." button. These names are used to access and implement button click functionalities.
+
+
+### How the Functionalities Works ###
+Page : RegistrationForm.java
+Register :: When user clicks `Register` button:
+	1. Get the info from form filled by user (Page: RegistrationForm.java, Line No: 215-227) 
+	2. Validate if any of the fields is empty or not (Page: RegistrationForm.java, Line No: 230)
+	3. If empty, show "All fields are required". (Page: RegistrationForm.java, Line No: 231)
+	4. Else
+		Connect to mysql database(Page: RegistrationForm.java, Line No: 236)
+		Create a statement which will carry out queries (Page: RegistrationForm.java, Line No: 238)
+		Create table in ftdca db named registration IF NOT EXISTS(Page: RegistrationForm.java, Line No: 243)
+		Insert a new row with all the info just gathered from the registration form(Page: RegistrationForm.java, Line No: 244)
+		Hide this page and go to Login.java Page (Page: RegistrationForm.java, Line No: 247, 249)
+	N:B: Statement.execute() function returns false when no data is to be returned. If the query is a SELECT query, it will return a ResultSet.
+ 
+Back :: When user clicks `Back` button:
+	1. Hide the current page and Crete a new Login Page (Page: RegistrationForm.java, Line No: 264, 265)
+
+Page: Login.java
+Login :: When user clicks `Login` button:
+	1. Get the info from form (Page: Login.java Line: 127,128)
+	2. Check if they are empty or not(Page: Login.java Line: 129)
+	3. If empty show a text (Page: Login.java Line: 130)
+	4. Else 
+		Verify email and password (Page: Login.java Line: 132)
+		N:B: Here GetCredential page has been used to store users fb and twitter credentials whenever they successfully log in. 
+		     So no need to connect mysql to fetch fb or twitters credentials again.
+		If email and password is verified, go to Menu page (Page: Login.java Line: 135)
+		else show error text (Page: Login.java Line: 137)
+
+
+FacebookResults.java
+N:B: IsTableLoaded is a flag which is true when there is data on the table, else is false.
+
+Search::When user clicks `Search` button:
+	1. Check if Accesstoken and/or Group id is given or not (Page FacebookResults.java, Line: 193)
+	2. If empty show error text (Page FacebookResults.java, Line: 194)
+	3. Else
+		get the info (Page FacebookResults.java, Line: 196, 197)
+		Crete JSON object and JSON Array. JSON will be used to save fetched data from facebook
+		try
+		    ConfigurationStarter() which will configure facebook4j Library and also fetch posts from facebook.
+ConfigurationStarter() Function:
+	1. GetCredential is used to get AppId and AppSecret (Page FacebookResults.java, Line: 259)
+	2. Configures facebook4j (Page FacebookResults.java, Line: 261 - 270)
+	3. Get an instance of facebook using the configurations (Page FacebookResults.java, Line: 272)
+	4. Call getFacebookPostes() functions with facebook instance and group id (Page FacebookResults.java, Line: 275)
+
+getFacebookPostes() function:
+	1. Get the model of the table which will be used to add row (Page FacebookResults.java, Line: 285)
+	2. Get the number of post to be fetched, specified by user (Page FacebookResults.java, Line: 287)
+	3. NoOfPostsToBeFetched variable is the limit and currentPos is the offset, limit is how many post fetch at once, offset is how recent data is to be fetched (Page FacebookResults.java, Line: 288, 289)
+	4. Fetch the posts from facebook (Page FacebookResults.java, Line: 292)
+	5. Add them into table one by one (Page FacebookResults.java, Line: 293-294)
+	6. if less than 100 posts remaining to be fetched, lower the limit i.e. NoOfPostsToBeFetched variables value (Page FacebookResults.java, Line: 298)
+
+Save::When user clicks `Search` button:
+	1. check if table is loaded with data or not (Page FacebookResults.java, Line: 216)
+	2. get no of row on the table (Page FacebookResults.java, Line: 219)
+	3. loop through the row and add them into JSONArray (Page FacebookResults.java, Line: 220-226)
+	4. put the array into a JSONObject (Page FacebookResults.java, Line: 229)
+	5. Open a filechooser (Page FacebookResults.java, Line: 232-234)
+	6. if user clicks save button (Page FacebookResults.java, Line: 236)
+		get the selected file (Page FacebookResults.java, Line: 237)
+		if user provides correct extension (Page FacebookResults.java, Line: 238)
+			get the path (Page FacebookResults.java, Line: 239)
+		else
+			add .json in the end of the path (Page FacebookResults.java, Line: 241)
+	7. Create a file in that path (Page FacebookResults.java, Line: 245)
+	8. Write data into that file (Page FacebookResults.java, Line: 246,247)
+
+
+
+
+
+
+
+
+
+
+
+
