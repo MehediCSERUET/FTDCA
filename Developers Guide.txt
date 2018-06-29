@@ -130,7 +130,7 @@ getFacebookPostes() function:
 	5. Add them into table one by one (Page FacebookResults.java, Line: 293-294)
 	6. if less than 100 posts remaining to be fetched, lower the limit i.e. NoOfPostsToBeFetched variables value (Page FacebookResults.java, Line: 298)
 
-Save::When user clicks `Search` button:
+Save::When user clicks `Save` button:
 	1. check if table is loaded with data or not (Page FacebookResults.java, Line: 216)
 	2. get no of row on the table (Page FacebookResults.java, Line: 219)
 	3. loop through the row and add them into JSONArray (Page FacebookResults.java, Line: 220-226)
@@ -146,13 +146,140 @@ Save::When user clicks `Search` button:
 	8. Write data into that file (Page FacebookResults.java, Line: 246,247)
 
 
+Page: TwitterResult.java
+Search::when "Search"  Button is clicked
+	1.Check if Hashtag and No of tweet field is empty or not. (Line: 176)
+	2. Get the info (Line: 179-180)
+	3. ConfigurationStarter() is used to configure twitter4j Library to authenticate to use twitter api (Line: 184)
+
+ConfigurationStarter():
+	1. GetCredential is used to get the API keys needed to configure twitter4j, which were fetched from db while login was done. (Line: 235)
+	2. Configure twitter4j and build a twitter instance (Line: 238-244)
+	3. Query is used to fetch data from twitter based on hashtag (Line: 248) 
+	4. numberOfTweets is user given, how many tweet will be fetched (Line: 249)
+	5. lastID saves the ID of the tweet that has been fetched lastly i.e. which is the oldest tweet. The less the value, the older the twee. Same as first post has id 1 and second post has id 2. but 2nd post is most recent (Line: 250)
+	6. ArrayList of type status is used to store the fetched tweet (Line: 251)
+	7. temp is used to break out of loop. SOmetimes, in the end, same data comes over and over. (Line: 252)
+	8. While all tweet has not been fethced (Line: 253)
+		checking if same tweet has been fethced and going to stuck into infinity loop or not. if yes, break (Line: 254)
+		if remaining number of tweets is greater than 100 (N:B: 100 is the max limit of fethcing tweet at once) (Line: 260)
+			setCount to 100 (Line: 261)
+		else setCount to whatever left to be fethed (Line: 263)
+	9. Fetch the tweet from twitter (Line: 265)
+	10. Add the fethced tweet into ArrayList from which data will be loaded into table (Line: 266)
+	11. Find the minimum id of the tweet i.e. oldest tweet. Next fetching will start from there (Line: 267-270)
+
+	12. loop through all the fethced tweet (Line: 277)
+		get a single tweet (Line: 278)
+		get the message from that (Line: 279)
+		get the id of the tweet (Line: 280)
+		add a row into the table (Line: 281)
+		add into json array (Line: 284-286)
+		IsTableLoaded flag is set true that means data is present on the table (Line: 287)
 
 
 
+Page: GetCredentials.java
+The purpose of this page is to verify log in and fetch all the api keys from mysql so that we dont need to fetch from mysql for api keys
+
+Get(Mail and password):
+	Connect to mysql, database name = ftdca, which is provided in the url, user name of the account of mysql(root) and password(nothing) (Line: 32) 
+	Create a statement which will execute sql query provided  in 36 (Line: 37)
+	loop through the resultset though only one should be returned (Line: 39)
+		get all the values from mysql using the column name of the mysql (Line: 40-47)
+	check if the password and username mathces or not, if mathces return true (Line: 50)
+	else show failed (Line: 53)
+	
+rest of the functions provide the api keys
+
+Page: EditInfo.java
+Submit Button
+	get email from getCredential page (Email can't be changed) (Line: 217-218)
+	Fetch all the values which will be changed from the form (Line: 220-231)
+	Connect to mysql using db name (url), user name and password (Line: 234-235)
+	if new password is given by user (Line: 238)
+		update and show to user 
+	if twitter api keys are given (Line: 246)
+		update and show to user
+	if fb api keys are given (Line: 254)
+		update and show to user
+	
+
+Page: JSON2MYSQL.java
+ChooseFile button:
+	1. Create a jfilechooser and open it
+	2. get the selected file 
+	3. get the model of the table of the software(model of the software includes various methods for inserting, deleting etch into the table. model can be written by developer as well but here default table model was used for convenience)
+	4. create a json parser object which will be used for parsing i.e reading through the json files
+	5. Read the json file using parser and save it into an object
+	6. Set IsTableLoaded flag tru as it will be filled with data in a moment
+	7. type cast the object into json object so that we can call the json array we saved earlier using the key "data"
+	8. get the json array using the key "data"
+	9. load the json array into an iterator which will help to iterate through the json
+	10. loop through the iterator as long as it has data
+		get the data serially as saved
+		add into the table of the software
+		if the data is not missing then add it into mysql calling the function AddIntoMySQL
+
+AddIntoMySQL(tablename, post, date, and id)
+	1. connect to mysql and create a statement (Line: 361-363)
+	2. format the string date into date type for mysql (Line: 365, 366)
+	3. create the table if not exit and insert the row (Line: 371-372)
+
+
+Execute button: It can only execute SELECT * type query as different type of query need different type of table model to print the data
+	1. if any/both of the data is not given (Line: 324-325)
+	2. connect to mysql and create a statement (Line: 329-331)
+	3. execute the query and save the resultset (Line: 333)
+	4. clear the table (Line: 335-338)
+	5. get the value from the resultset and add into table of the software (Line: 342-348)
+	6. set the flag true (Line: 350)
+
+ClearTable:
+	1. if table is loaded (Line: 301)
+	2. loop until there is at least one row left in the table (Line: 303)
+		remove the last row (Line: 304)
+	3. set the flag to false (Line: 307)
+	4. drop the table from mysql (Line: 310-314)
+
+
+Page: PreProcess.java
+	
+Add Row:
+	1. check if the table has data or not (Line: 252)
+	2. check if user entered any info or not (Line: 253)
+	3. if entered, get the current date, add the info as new row using post id =-1 (Line: 256-258)
+	4. clear the add row text field (Line: 259)
+
+Delete Row:
+	1. check if the table was loaded (Line: 267)
+	2. get the id of the ropw to be deleted (Line: 268)
+	3. if the number if not empty (Line: 269)
+		get the total row of the table (Line: 273)
+		loop through all the row and match every row's id number with user given id number. if match found, break (Line: 275-280)
+		before deleting the row, confirm if the row exist or not(Line: 281-282)
+		if exist, delete the row and clear the number from the form(Line: 284-285)
 
 
 
+save button:
+	loop through all the row of the table (Line: 298)
+		if "Post" column is not null (Line: 299)
+		add into json array post, date and post id (Line: 300-302)
+	rest are same as above	
 
+Editing of the row of the table is done by clicking on the row directly. Press enter to complete.
+
+
+## Limitations
+	1. The number of attributes is 4. The type of the data(since it is from a single page/group from fb or based on hashtag from twitter), actual post/tweet, date of creation and post/tweet id.
+	2. The database name must be 'ftdca'  and user name of the mysql must be root and no password must be set. this can be changed easily. Find the line where connection is made to mysql and change the db name from ftdca to whatever you want from the url string.
+	   This are chosen for convenience because without these, user has to enter this information every time they want to use the software.
+ 	3. Rate limit per user is 15 requests. To know more visit: https://developers.twitters.com/docs/basics/rate-limits.html
+	   If data fetching from twitter is not working after some usage, change the credentials.
+	4. The query type is limited as the number of attribute is limited. Other attribute returns null thats why the number of the attribute are limited. 
+	5. Statistics of the data is not given except the number of rows. It is also the direct consequence of less attribute of data.
+	6. Sometimes facebook and twitter api shows exception in case of high number of data is asked by user.
 
 
 
